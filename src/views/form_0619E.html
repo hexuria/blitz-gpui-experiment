@@ -1,0 +1,576 @@
+<html><head><style>
+/* Layout: unified 40px title bar over a 248px left rail, a rounded inset main surface, and a 320px right panel that serves either the tax profile or notifications */
+:root{
+  --bg:#f4f4f6; --surface:#ffffff; --raised:#ffffff; --hover:#ebebee; --selected:#e2e2e7;
+  --border:#e2e2e6; --border-strong:#cdcdd3;
+  --fg:#18181b; --fg-2:#54545d; --fg-3:#8a8a93;
+  --primary:#18181b; --primary-fg:#ffffff;
+  --accent:#2557d6; --accent-soft:rgba(37,87,214,.10); --focus:rgba(37,87,214,.45);
+  --success:#157a3c; --success-soft:rgba(21,122,60,.10);
+  --warning:#a5520a; --warning-soft:rgba(196,110,10,.13);
+  --danger:#c0262d; --danger-soft:rgba(192,38,45,.10);
+  --scrim:rgba(24,24,27,.30);
+  --shadow:0 1px 2px rgba(20,20,30,.04),0 10px 30px rgba(20,20,30,.08);
+  --pop:0 4px 12px rgba(20,20,30,.08),0 18px 44px rgba(20,20,30,.14);
+  --av-s:55%; --av-bg:90%; --av-fg:30%;
+  --font-ui:"Segoe UI Variable Text","Segoe UI",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  --font-mono:"Cascadia Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  --font-num:var(--font-ui); /* TIN, branch and form codes: UI face + tabular digits, never monospace */
+  --fs-cap:11px; --fs-meta:12px; --fs-body:13px; --fs-emph:14px; --fs-title:16px; --fs-page:20px;
+  --r-ctl:6px; --r-row:8px; --r-card:12px; --r-dialog:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e0e10; --surface:#161619; --raised:#232328; --hover:#1f1f23; --selected:#29292f;
+  --border:#25252a; --border-strong:#38383f;
+  --fg:#f3f3f5; --fg-2:#a7a7b1; --fg-3:#73737d;
+  --primary:#f3f3f5; --primary-fg:#111113;
+  --accent:#7ea2ff; --accent-soft:rgba(126,162,255,.14); --focus:rgba(126,162,255,.55);
+  --success:#5bd68a; --success-soft:rgba(91,214,138,.12);
+  --warning:#f3b44a; --warning-soft:rgba(243,180,74,.13);
+  --danger:#ff7b7b; --danger-soft:rgba(255,123,123,.12);
+  --scrim:rgba(0,0,0,.55);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 36px rgba(0,0,0,.45);
+  --pop:0 4px 12px rgba(0,0,0,.4),0 18px 44px rgba(0,0,0,.55);
+  --av-s:40%; --av-bg:26%; --av-fg:84%;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0e0e10; --surface:#161619; --raised:#232328; --hover:#1f1f23; --selected:#29292f;
+  --border:#25252a; --border-strong:#38383f;
+  --fg:#f3f3f5; --fg-2:#a7a7b1; --fg-3:#73737d;
+  --primary:#f3f3f5; --primary-fg:#111113;
+  --accent:#7ea2ff; --accent-soft:rgba(126,162,255,.14); --focus:rgba(126,162,255,.55);
+  --success:#5bd68a; --success-soft:rgba(91,214,138,.12);
+  --warning:#f3b44a; --warning-soft:rgba(243,180,74,.13);
+  --danger:#ff7b7b; --danger-soft:rgba(255,123,123,.12);
+  --scrim:rgba(0,0,0,.55);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 36px rgba(0,0,0,.45);
+  --pop:0 4px 12px rgba(0,0,0,.4),0 18px 44px rgba(0,0,0,.55);
+  --av-s:40%; --av-bg:26%; --av-fg:84%;
+  color-scheme:dark;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:var(--fs-body)/1.45 var(--font-ui);-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit}
+.page{height:100%;display:flex;flex-direction:column;padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));gap:12px}
+svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.mono{font-family:var(--font-num);font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+
+/* prototype bar */
+.proto{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap}
+.proto .ttl{font-weight:600;font-size:var(--fs-emph)}
+.proto .sub{color:var(--fg-3);font-size:var(--fs-meta)}
+.proto .grow{flex:1}
+.proto label{font-size:var(--fs-meta);color:var(--fg-3);display:inline-flex;align-items:center;gap:8px}
+
+/* primitives */
+.ibtn{width:28px;height:28px;display:inline-grid;place-items:center;border:0;border-radius:var(--r-ctl);background:transparent;color:var(--fg-2);cursor:pointer;position:relative;flex-shrink:0}
+.ibtn:hover{background:var(--hover);color:var(--fg)}
+.ibtn[aria-pressed="true"]{background:var(--selected);color:var(--fg)}
+.ibtn:disabled{color:var(--fg-3);opacity:.5;cursor:default;background:transparent}
+.ibtn .dot{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--bg)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;border-radius:var(--r-ctl);border:1px solid transparent;background:transparent;font-weight:500;font-size:var(--fs-body);cursor:pointer;white-space:nowrap;color:var(--fg)}
+.btn.sm{height:28px;padding:0 10px}
+.btn.primary{background:var(--primary);color:var(--primary-fg)}
+.btn.primary:hover{opacity:.88}
+.btn.secondary{background:var(--surface);border-color:var(--border-strong)}
+.btn.secondary:hover{background:var(--hover)}
+.btn.ghost{color:var(--fg-2)}
+.btn.ghost:hover{background:var(--hover);color:var(--fg)}
+.btn.danger{background:var(--danger-soft);color:var(--danger)}
+.btn.danger:hover{filter:brightness(.97)}
+.nav{display:flex;align-items:center;gap:10px;width:100%;height:32px;padding:0 8px;border:0;border-radius:var(--r-row);background:transparent;color:var(--fg-2);font-weight:500;text-align:left;cursor:pointer}
+.nav:hover{background:var(--hover);color:var(--fg)}
+.nav[aria-current="page"]{background:var(--selected);color:var(--fg)}
+.nav .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav .count{font-size:var(--fs-meta);color:var(--fg-3);font-variant-numeric:tabular-nums}
+.nav .trail{color:var(--fg-3)}
+.glabel{font-size:var(--fs-meta);font-weight:500;color:var(--fg-3);padding:16px 8px 4px}
+.av{display:inline-grid;place-items:center;border-radius:50%;flex-shrink:0;font-weight:600;letter-spacing:.02em;background:hsl(var(--h) var(--av-s) var(--av-bg));color:hsl(var(--h) var(--av-s) var(--av-fg))}
+.av.s20{width:20px;height:20px;font-size:9px}
+.av.s28{width:28px;height:28px;font-size:11px}
+.av.s40{width:40px;height:40px;font-size:14px}
+.av.s56{width:56px;height:56px;font-size:19px}
+.chip{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:999px;font-size:var(--fs-cap);font-weight:500;background:var(--hover);color:var(--fg-2);white-space:nowrap}
+.chip svg.i{width:12px;height:12px}
+.chip.accent{background:var(--accent-soft);color:var(--accent)}
+.chip.success{background:var(--success-soft);color:var(--success)}
+.chip.warning{background:var(--warning-soft);color:var(--warning)}
+.chip.danger{background:var(--danger-soft);color:var(--danger)}
+.switch{position:relative;width:32px;height:18px;border-radius:999px;border:0;background:var(--border-strong);cursor:pointer;flex-shrink:0;transition:background .15s}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.switch[aria-checked="true"]{background:var(--accent)}
+.switch[aria-checked="true"]::after{transform:translateX(14px)}
+.seg{display:inline-flex;gap:2px;padding:2px;border-radius:var(--r-row);background:var(--hover)}
+.seg button{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border:0;border-radius:var(--r-ctl);background:transparent;color:var(--fg-2);font-size:var(--fs-meta);font-weight:500;cursor:pointer}
+.seg button svg.i{width:14px;height:14px}
+.seg button[aria-pressed="true"]{background:var(--raised);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.input{width:100%;height:32px;padding:0 10px;border:1px solid var(--border-strong);border-radius:var(--r-row);background:var(--surface);color:var(--fg);font:var(--fs-body) var(--font-ui)}
+.input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.input:disabled{background:var(--hover);color:var(--fg-2)}
+.input.err{border-color:var(--danger)}
+.errtxt{font-size:var(--fs-meta);color:var(--danger);margin-top:4px}
+.check{width:16px;height:16px;border-radius:4px;border:1px solid var(--border-strong);background:var(--surface);display:inline-grid;place-items:center;cursor:pointer;padding:0;flex-shrink:0}
+.check svg.i{width:12px;height:12px;stroke-width:2.5;opacity:0}
+.check[aria-checked="true"]{background:var(--primary);border-color:var(--primary);color:var(--primary-fg)}
+.check[aria-checked="true"] svg.i{opacity:1}
+
+/* window */
+.window{position:relative;flex:1;min-height:0;display:grid;grid-template-rows:40px minmax(0,1fr);background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
+.window.win{border-radius:8px}
+.titlebar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;user-select:none}
+.tb-left{display:flex;align-items:center;gap:4px;padding-left:10px;min-width:0}
+.tb-right{display:flex;align-items:center;gap:4px;justify-self:end;height:100%}
+.window.mac .tb-right{padding-right:10px}
+.lights{display:none;gap:8px;padding:0 10px 0 4px}
+.lights span{width:12px;height:12px;border-radius:50%}
+.lights span:nth-child(1){background:#ff5f57}.lights span:nth-child(2){background:#febc2e}.lights span:nth-child(3){background:#28c840}
+.window.mac .lights{display:flex}
+.wc{display:none;height:100%;margin-left:4px}
+.window.win .wc{display:flex}
+.wc button{width:46px;height:100%;border:0;background:transparent;display:grid;place-items:center;color:var(--fg);cursor:default}
+.wc button:hover{background:var(--hover)}
+.wc button.close:hover{background:#c42b1c;color:#fff}
+.wc svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:1}
+.collapsed-only{display:none}
+.window.sb-hidden .collapsed-only{display:inline-grid}
+.pill{display:inline-flex;align-items:center;gap:8px;height:30px;max-width:min(460px,46vw);padding:0 10px 0 4px;border:1px solid var(--border);border-radius:999px;background:var(--surface);cursor:pointer;min-width:0}
+.pill:hover{border-color:var(--border-strong)}
+.pill[aria-expanded="true"]{background:var(--selected);border-color:var(--border-strong)}
+.pill .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.pill .tin{font-size:var(--fs-meta);color:var(--fg-2);white-space:nowrap}
+.pill .bc{display:none;font-size:var(--fs-meta);color:var(--fg-2)}
+.pill svg.i{width:14px;height:14px;color:var(--fg-3)}
+.pill.add{padding-left:10px}
+
+.body{display:flex;min-height:0}
+.sidebar{width:248px;flex-shrink:0;display:flex;flex-direction:column;padding:4px 8px 8px;min-height:0}
+.window.sb-hidden .sidebar{display:none}
+.sb-top{display:flex;gap:4px;align-items:center}
+.searchbtn{flex:1;display:flex;align-items:center;gap:8px;height:32px;padding:0 8px 0 10px;border:1px solid var(--border);border-radius:var(--r-row);background:var(--surface);color:var(--fg-3);cursor:pointer;min-width:0}
+.searchbtn:hover{border-color:var(--border-strong);color:var(--fg-2)}
+.searchbtn .lbl{flex:1;text-align:left}
+kbd{font:500 var(--fs-cap) var(--font-ui);color:var(--fg-3);border:1px solid var(--border);border-radius:4px;padding:0 4px;height:18px;display:inline-flex;align-items:center}
+.sb-scroll{flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;display:flex;flex-direction:column;gap:2px;padding-top:12px}
+.sb-foot{display:flex;flex-direction:column;gap:2px;padding-top:8px;position:relative}
+.account{display:flex;align-items:center;gap:10px;width:100%;padding:6px 8px;border:0;border-radius:var(--r-row);background:transparent;cursor:pointer;text-align:left}
+.account:hover,.account[aria-expanded="true"]{background:var(--hover)}
+.account .who{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.3}
+.account .who b{font-weight:500;font-size:var(--fs-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.account .who span{font-size:var(--fs-meta);color:var(--fg-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.account svg.i{color:var(--fg-3)}
+.menu{position:absolute;left:0;right:0;bottom:calc(100% + 4px);background:var(--raised);border:1px solid var(--border);border-radius:var(--r-card);box-shadow:var(--pop);padding:4px;z-index:25}
+.menu .head{padding:8px 8px 8px;font-size:var(--fs-meta);color:var(--fg-3);border-bottom:1px solid var(--border);margin-bottom:4px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);margin:0 8px 8px 0;overflow:hidden;container-type:inline-size}
+.window.sb-hidden .main{margin-left:8px}
+.window.panel-open .main{margin-right:0}
+.main-scroll{flex:1;overflow-y:auto;overflow-x:hidden}
+.content{max-width:880px;margin:0 auto;padding:28px 32px 56px}
+.rpanel{display:none;width:320px;flex-shrink:0;flex-direction:column;min-height:0}
+.window.panel-open .rpanel{display:flex}
+.rp-head{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px 0 20px;flex-shrink:0}
+.rp-head h2{flex:1;margin:0;font-size:var(--fs-emph);font-weight:600}
+.rp-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 12px 12px 12px}
+
+/* page */
+.ph{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.ph-text{flex:1;min-width:0}
+.ph h1{margin:0;font-size:var(--fs-page);font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+.ph .meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px;color:var(--fg-2);font-size:var(--fs-meta)}
+.sep-dot{width:3px;height:3px;border-radius:50%;background:var(--fg-3)}
+.ph-actions{display:flex;gap:8px}
+.lede{color:var(--fg-2);margin:6px 0 0;max-width:62ch}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--border);margin:20px 0 24px}
+.tab{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 10px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;color:var(--fg-2);font-weight:500;cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--fg)}
+.tab .count{font-size:var(--fs-cap);padding:0 6px;border-radius:999px;background:var(--hover);color:var(--fg-2);line-height:18px}
+h2.sec{font-size:var(--fs-title);font-weight:600;margin:32px 0 12px}
+h2.sec:first-child{margin-top:0}
+
+/* disclosure */
+.disc-group{border:1px solid var(--border);border-radius:var(--r-card);overflow:hidden}
+.disc+.disc{border-top:1px solid var(--border)}
+.disc-head{display:flex;align-items:center;gap:8px;padding-right:12px}
+.disc-toggle{flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:44px;padding:0 8px 0 12px;border:0;background:none;cursor:pointer;text-align:left;font-weight:600}
+.disc-toggle .chev{color:var(--fg-3);transition:transform .15s}
+.disc.open .chev{transform:rotate(90deg)}
+.disc-meta{font-weight:400;font-size:var(--fs-meta);color:var(--fg-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.disc-body{display:none;padding:4px 20px 20px 36px}
+.disc.open .disc-body{display:block}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 32px;margin:0}
+.field{min-width:0}
+.field.full{grid-column:1/-1}
+.field dt{display:flex;align-items:center;gap:8px;font-size:var(--fs-meta);color:var(--fg-2);margin-bottom:4px;min-height:20px}
+.field dt .grow{flex:1}
+.field dd{margin:0;overflow-wrap:anywhere}
+.field.inh dd{color:var(--fg-2)}
+.inh-ctl{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-cap);color:var(--fg-3)}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+
+/* lists */
+.list{border:1px solid var(--border);border-radius:var(--r-card);overflow:hidden}
+.row{display:grid;align-items:center;gap:12px;min-height:52px;padding:8px 16px}
+.row+.row{border-top:1px solid var(--border)}
+.row.click{cursor:pointer}
+.row.click:hover{background:var(--hover)}
+.row.dim{color:var(--fg-3)}
+.row.dim .code{color:var(--fg-3)}
+.code{font-family:var(--font-num);font-size:var(--fs-meta);font-weight:600;font-variant-numeric:tabular-nums}
+.rname{min-width:0}
+.rname b{display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rname span{display:block;font-size:var(--fs-meta);color:var(--fg-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row.dim .rname b{color:var(--fg-3)}
+.num{font-size:var(--fs-meta);color:var(--fg-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.r-forms{grid-template-columns:16px 68px minmax(0,1fr) 84px 104px 112px}
+.r-due{grid-template-columns:44px 68px minmax(0,1fr) 88px 96px}
+.r-forms.read{grid-template-columns:68px minmax(0,1fr) 84px 104px 112px}
+.r-tpl{grid-template-columns:68px minmax(0,1fr) 128px 172px}
+.r-step{grid-template-columns:28px 16px minmax(0,1fr)}
+.stepc{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--hover);color:var(--fg-2);font-size:var(--fs-meta);font-weight:600;font-variant-numeric:tabular-nums}
+.r-step>svg.i{color:var(--fg-2)}
+.r-filed{grid-template-columns:68px minmax(0,1fr) 104px 132px}
+.datebox{width:44px;text-align:center;line-height:1.1}
+.datebox small{display:block;font-size:var(--fs-cap);font-weight:600;color:var(--fg-3);letter-spacing:.06em}
+.datebox b{font-size:var(--fs-title);font-weight:600;font-variant-numeric:tabular-nums}
+.toolbar{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin-bottom:16px}
+.toolbar .grow{flex:1}
+.toolbar .searchbtn{flex:0 1 280px;cursor:text}
+.toolbar .searchbtn input{flex:1;border:0;background:transparent;color:var(--fg);font:var(--fs-body) var(--font-ui);outline:none;min-width:0}
+.helptxt{font-size:var(--fs-meta);color:var(--fg-3);margin:16px 0 0}
+.packs{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.packs .lbl{font-size:var(--fs-meta);color:var(--fg-3);margin-right:2px}
+.banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;border-radius:var(--r-card);background:var(--accent-soft);margin-bottom:16px}
+.banner p{flex:1;margin:0;min-width:200px}
+.empty{padding:40px 16px;text-align:center;color:var(--fg-3)}
+.srow{display:flex;align-items:center;gap:16px;padding:14px 0;border-top:1px solid var(--border)}
+.srow:first-of-type{border-top:0}
+.srow .txt{flex:1;min-width:0}
+.srow .txt b{display:block;font-weight:500}
+.srow .txt span{display:block;font-size:var(--fs-meta);color:var(--fg-3)}
+.card{border:1px solid var(--border);border-radius:var(--r-card);padding:4px 16px}
+
+/* right panel content */
+.tp-hero{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:12px 8px 16px}
+.tp-hero .edit{position:absolute;top:8px;right:0}
+.tp-hero h3{margin:4px 0 0;font-size:var(--fs-title);font-weight:600;text-wrap:balance}
+.tp-hero .tin{font-size:var(--fs-meta);color:var(--fg-2)}
+.facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;margin:0 8px 4px;padding:12px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.facts dt{font-size:var(--fs-meta);color:var(--fg-3);display:flex;align-items:center;gap:6px}
+.facts dd{margin:0;font-size:var(--fs-body);min-width:0;overflow-wrap:anywhere}
+.p-edit{display:flex;flex-direction:column;gap:12px;padding:4px 8px 8px}
+.p-edit label{display:flex;flex-direction:column;gap:4px;font-size:var(--fs-meta);color:var(--fg-2)}
+.notif{display:flex;gap:12px;padding:10px 8px;border-radius:var(--r-row)}
+.notif:hover{background:var(--hover)}
+.notif .ico{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;background:var(--hover);color:var(--fg-2)}
+.notif .ico.warning{background:var(--warning-soft);color:var(--warning)}
+.notif .ico.success{background:var(--success-soft);color:var(--success)}
+.notif .tx{flex:1;min-width:0}
+.notif .tx b{display:block;font-weight:500}
+.notif .tx span{display:block;font-size:var(--fs-meta);color:var(--fg-3)}
+.notif .when{font-size:var(--fs-cap);color:var(--fg-3);white-space:nowrap;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.notif .udot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+
+/* overlays */
+.overlay{position:absolute;inset:0;background:var(--scrim);display:flex;justify-content:center;align-items:flex-start;padding:64px 16px 16px;z-index:40}
+.dialog{width:min(560px,100%);max-height:100%;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-dialog);box-shadow:var(--pop);overflow:hidden}
+.dlg-head{padding:16px 20px 4px}
+.dlg-head h2{margin:0;font-size:var(--fs-title);font-weight:600}
+.dlg-head p{margin:2px 0 0;color:var(--fg-2);font-size:var(--fs-meta)}
+.dlg-body{padding:12px 12px;overflow-y:auto;overflow-x:hidden}
+.dlg-foot{display:flex;gap:8px;justify-content:flex-end;padding:12px 20px 16px;border-top:1px solid var(--border)}
+.pal-input{display:flex;align-items:center;gap:10px;padding:0 16px;height:48px;border-bottom:1px solid var(--border);color:var(--fg-3)}
+.pal-input input{flex:1;border:0;background:transparent;font:var(--fs-emph) var(--font-ui);color:var(--fg);outline:none;min-width:0}
+.opt{display:flex;align-items:center;gap:10px;width:100%;min-height:36px;padding:6px 10px;border:0;border-radius:var(--r-row);background:transparent;text-align:left;cursor:pointer;color:var(--fg)}
+.opt:hover,.opt.on{background:var(--hover)}
+.opt[aria-selected="true"]{background:var(--selected)}
+.opt .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.opt .hint{font-size:var(--fs-meta);color:var(--fg-3)}
+.opt svg.i{color:var(--fg-2)}
+.pgroup{font-size:var(--fs-cap);font-weight:600;color:var(--fg-3);padding:10px 10px 4px;letter-spacing:.04em;text-transform:uppercase}
+.select{height:32px;border:1px solid var(--border-strong);border-radius:var(--r-row);background:var(--surface);color:var(--fg);padding:0 8px;font:var(--fs-body) var(--font-ui)}
+.toast{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);padding:10px 14px;border-radius:var(--r-card);background:var(--primary);color:var(--primary-fg);box-shadow:var(--pop);z-index:50;font-weight:500}
+.toast svg.i{flex-shrink:0}
+
+/* design-system page */
+.ds{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.ds-in{max-width:980px;margin:0 auto;padding:32px 32px 64px}
+.ds h1{font-size:28px;font-weight:600;letter-spacing:-.02em;margin:0;text-wrap:balance}
+.ds h2{font-size:var(--fs-page);font-weight:600;margin:48px 0 6px;letter-spacing:-.01em}
+.ds h3{font-size:var(--fs-emph);font-weight:600;margin:0}
+.ds p.lead{color:var(--fg-2);max-width:66ch;margin:8px 0 0}
+.ds .note{color:var(--fg-2);max-width:66ch;margin:0 0 16px}
+.rules{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:20px}
+.rule{border:1px solid var(--border);border-radius:var(--r-card);padding:14px 16px}
+.rule b{display:block;font-size:var(--fs-emph);margin-bottom:4px}
+.rule span{color:var(--fg-2);font-size:var(--fs-meta)}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.sw{display:flex;gap:12px;align-items:center;min-width:0}
+.sw i{width:40px;height:40px;border-radius:var(--r-row);border:1px solid var(--border);flex-shrink:0}
+.sw div{min-width:0;font-size:var(--fs-meta);color:var(--fg-2);line-height:1.35}
+.sw code{font-family:var(--font-num);font-size:var(--fs-meta);color:var(--fg)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r-card)}
+table{border-collapse:collapse;width:100%;font-size:var(--fs-meta)}
+th,td{text-align:left;padding:9px 14px;border-top:1px solid var(--border);vertical-align:middle;white-space:nowrap}
+th{border-top:0;color:var(--fg-3);font-weight:500;background:var(--bg)}
+td.wrap{white-space:normal;min-width:200px;color:var(--fg-2)}
+.comp{border:1px solid var(--border);border-radius:var(--r-card);margin-top:16px;overflow:hidden}
+.comp-demo{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:20px;background:var(--bg);border-bottom:1px solid var(--border);min-height:76px}
+.comp-demo.col{flex-direction:column;align-items:stretch}
+.comp-spec{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px 24px;padding:16px 20px}
+.comp-spec h3{grid-column:1/-1}
+.comp-spec ul{margin:0;padding-left:18px;color:var(--fg-2);font-size:var(--fs-meta);display:flex;flex-direction:column;gap:4px}
+.comp-spec .k{font-size:var(--fs-cap);font-weight:600;color:var(--fg-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.anat{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;height:40px;border:1px dashed var(--border-strong);border-radius:var(--r-row);background:var(--surface);padding:0 8px;gap:8px;width:100%}
+.anat .z{display:flex;gap:4px;align-items:center;font-size:var(--fs-cap);color:var(--fg-3)}
+.anat .z.r{justify-self:end}
+.anat .slot{border:1px dashed var(--border-strong);border-radius:4px;padding:2px 6px;white-space:nowrap}
+.anat .slot.cond{border-style:dotted;color:var(--accent)}
+
+/* form page */
+.content.wide{max-width:1120px}
+.fp-wrap{container-type:inline-size}
+.fp-ctx{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.fp-bar{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin:20px 0 20px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-card);background:var(--bg)}
+.fp-bar .grow{flex:1}
+.fp-bar label.inl{display:inline-flex;align-items:center;gap:8px;font-size:var(--fs-meta);color:var(--fg-2)}
+.fp{display:grid;grid-template-columns:208px minmax(0,1fr);gap:28px;align-items:start}
+.fp-nav{position:sticky;top:12px;display:flex;flex-direction:column;gap:2px}
+.fp-nav .nav{height:auto;min-height:32px;padding:6px 8px;align-items:flex-start}
+.fp-nav .nav .lbl{white-space:normal;line-height:1.35}
+.fp-nav .nav .count{padding-top:1px}
+.fp-nav .navhead{font-size:var(--fs-meta);font-weight:500;color:var(--fg-3);padding:0 8px 6px}
+.part{border:1px solid var(--border);border-radius:var(--r-card);overflow:hidden;scroll-margin-top:12px;background:var(--surface)}
+.part+.part{margin-top:16px}
+.part>summary{list-style:none;display:flex;align-items:center;gap:8px;min-height:48px;padding:0 16px 0 12px;cursor:pointer;font-weight:600}
+.part>summary::-webkit-details-marker{display:none}
+.part>summary .chev{color:var(--fg-3);transition:transform .15s}
+.part[open]>summary .chev{transform:rotate(90deg)}
+.part>summary .t{flex:1;min-width:0}
+.part>summary .disc-meta{flex-shrink:0}
+.part-body{border-top:1px solid var(--border)}
+.item{display:grid;grid-template-columns:44px minmax(0,1fr);gap:4px 12px;padding:14px 20px 8px 12px}
+.vmsg{height:18px;line-height:18px;margin-top:4px;font-size:var(--fs-meta);color:var(--danger);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item+.item{border-top:1px solid var(--border)}
+.item.calc{background:var(--bg)}
+.ino{font:600 var(--fs-meta) var(--font-num);font-variant-numeric:tabular-nums;color:var(--fg-2);background:var(--hover);border-radius:var(--r-ctl);height:22px;min-width:30px;display:inline-grid;place-items:center;padding:0 6px;justify-self:start;margin-top:1px}
+.ino.blank{background:transparent}
+.ilabel{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:10px;min-height:22px}
+.ilabel .tx{flex:1 1 240px;font-weight:500;line-height:1.4;padding-top:2px;min-width:0}
+.ilabel .req{color:var(--danger);margin-left:2px}
+.ctrls{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:flex-end}
+.ctl{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1 1 220px;max-width:100%}
+.ctl.xs{flex:0 0 88px}.ctl.sm{flex:0 1 140px}.ctl.money{flex:0 1 230px}.ctl.md{flex:1 1 180px}
+.ctl .sub{font-size:var(--fs-meta);color:var(--fg-2);overflow-wrap:anywhere}
+.affix{position:relative;display:block}
+.affix>i{position:absolute;top:50%;transform:translateY(-50%);font-style:normal;font-size:var(--fs-meta);color:var(--fg-3);pointer-events:none}
+.affix.peso>i{left:10px}.affix.peso input{padding-left:24px;text-align:right;font-variant-numeric:tabular-nums}
+.affix.pct>i{right:10px}.affix.pct input{padding-right:24px;text-align:right}
+.input.auto,.input[readonly]{background:var(--hover);color:var(--fg-2);cursor:default}
+.input.auto:focus{box-shadow:none;border-color:var(--border-strong)}
+.radios{display:flex;flex-wrap:wrap;gap:6px}
+.radio{position:relative;display:inline-flex}
+.radio input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.radio span{display:inline-flex;align-items:center;height:28px;padding:0 12px;border:1px solid var(--border-strong);border-radius:999px;font-size:var(--fs-meta);font-weight:500;color:var(--fg-2);background:var(--surface);white-space:nowrap}
+.radio:hover span{border-color:var(--fg-3);color:var(--fg)}
+.radio input:checked+span{background:var(--primary);border-color:var(--primary);color:var(--primary-fg)}
+.radio input:focus-visible+span{outline:2px solid var(--focus);outline-offset:1px}
+.chkl{display:inline-flex;align-items:center;gap:8px;min-height:28px;font-size:var(--fs-body)}
+.chkl input{width:16px;height:16px;margin:0;accent-color:var(--primary)}
+.tin{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tin input{text-align:center;font-family:var(--font-num);font-variant-numeric:tabular-nums;padding:0 6px}
+.tin .d{color:var(--fg-3)}
+.tbl-in{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r-row)}
+.tbl-in table{font-size:var(--fs-meta)}
+.tbl-in th{white-space:normal;min-width:120px;vertical-align:bottom}
+.tbl-in th.n,.tbl-in td.n{min-width:36px;width:36px;color:var(--fg-3);text-align:center}
+.tbl-in td{padding:6px 8px}
+.tbl-in td .input{height:30px;min-width:120px}
+.tbl-in td.money .input{text-align:right;font-variant-numeric:tabular-nums}
+.more{margin-top:4px}
+.more>summary{cursor:pointer;color:var(--fg-2);font-size:var(--fs-meta);font-weight:500;list-style:none;display:inline-flex;align-items:center;gap:6px;height:28px}
+.more>summary::-webkit-details-marker{display:none}
+.more[open]>summary .chev{transform:rotate(90deg)}
+.more .ctrls{margin-top:10px}
+.tbanner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:var(--r-card);background:var(--accent-soft);margin-bottom:16px}
+.tbanner p{margin:0;flex:1;min-width:200px}
+/* official sheet drawer (print preview) */
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(880px,62vw);z-index:60;display:flex;flex-direction:column;background:var(--bg);border-left:1px solid var(--border);box-shadow:var(--pop);padding-top:env(safe-area-inset-top,0px);padding-right:env(safe-area-inset-right,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.sheet-head{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:10px 12px 10px 20px;border-bottom:1px solid var(--border)}
+.sheet-head .ttl{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;line-height:1.3}
+.sheet-head .ttl b{font-size:var(--fs-emph);font-weight:600}
+.sheet-head .ttl span{font-size:var(--fs-meta);color:var(--fg-3)}
+.sheet-body{flex:1;min-height:0;overflow:auto;background:var(--hover);padding:16px}
+.sheet-frame{display:block;border:0;background:#fff;width:832px;transform-origin:0 0;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.sheet-note{max-width:520px;margin:24px auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:20px;display:flex;flex-direction:column;gap:12px}
+.sheet-note h3{margin:0;font-size:var(--fs-title);font-weight:600}
+.sheet-note p{margin:0;color:var(--fg-2)}
+.sheet-note code{display:block;font-family:var(--font-mono);font-size:var(--fs-meta);background:var(--hover);border-radius:var(--r-row);padding:10px 12px;overflow-x:auto;white-space:pre;color:var(--fg)}
+@media (max-width:860px){.sheet{width:100%}}
+/* forms showcase */
+.fs-in{max-width:1180px;margin:0 auto;padding:32px 32px 64px}
+.eli5{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) ;gap:16px;margin:24px 0 8px;align-items:stretch}
+.eli5 figure{margin:0;border:1px solid var(--border);border-radius:var(--r-card);padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--bg)}
+.eli5 svg{width:100%;height:auto;max-height:170px}
+.eli5 figcaption{font-size:var(--fs-emph);font-weight:600;text-wrap:balance}
+.eli5 figcaption span{display:block;font-weight:400;font-size:var(--fs-meta);color:var(--fg-2);margin-top:2px}
+.eli5 .stepn{width:24px;height:24px;border-radius:50%;background:var(--primary);color:var(--primary-fg);display:inline-grid;place-items:center;font-size:var(--fs-meta);font-weight:600}
+.sv-surf{fill:var(--surface)}.sv-bg{fill:var(--bg)}.sv-hover{fill:var(--hover)}.sv-fill{fill:var(--selected)}.sv-prim{fill:var(--primary)}.sv-accs{fill:var(--accent-soft)}
+.sv-stroke{stroke:var(--border-strong);stroke-width:1.2}
+.sv-line{fill:none;stroke:var(--border-strong);stroke-width:1.2}
+.sv-line-acc{fill:none;stroke:var(--accent);stroke-width:1.4}
+.sv-t{fill:var(--fg);font:600 10px var(--font-num)}
+.sv-l{fill:var(--fg);font:500 11px var(--font-ui)}
+.sv-a{fill:var(--accent);font:600 9px var(--font-ui)}
+.facts3{display:flex;gap:8px 28px;flex-wrap:wrap;margin:16px 0 0;color:var(--fg-2)}
+.facts3 b{display:block;font-size:24px;font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.fs-tools{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;margin:36px 0 16px}
+.fs-tools .searchbtn{flex:0 1 320px;cursor:text}
+.fs-tools .searchbtn input{flex:1;border:0;background:transparent;color:var(--fg);font:var(--fs-body) var(--font-ui);outline:none;min-width:0}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.fcard{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border:1px solid var(--border);border-radius:var(--r-card);background:var(--surface);text-align:left;cursor:pointer;min-width:0}
+.fcard:hover{border-color:var(--border-strong);box-shadow:var(--shadow)}
+.fcard .top{display:flex;align-items:center;gap:8px}
+.fcard .fc{font:600 var(--fs-title) var(--font-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.fcard .ft{font-weight:500;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em}
+.fcard .chips{display:flex;gap:6px;flex-wrap:wrap}
+.fcard .bars{display:flex;gap:3px;height:6px;margin-top:2px}
+.fcard .bars i{flex:1;border-radius:3px;background:var(--selected)}
+.fs-back{margin-bottom:16px}
+@container (max-width:760px){
+  .fp{grid-template-columns:minmax(0,1fr);gap:16px}
+  .fp-nav{position:static;flex-direction:row;flex-wrap:wrap;gap:4px;padding-bottom:4px}
+  .fp-nav .navhead{display:none}
+  .fp-nav .nav{flex:0 0 auto;width:auto;border:1px solid var(--border);border-radius:999px;min-height:28px;padding:4px 10px}
+  .fp-nav .nav .lbl{white-space:nowrap}
+  .item{grid-template-columns:minmax(0,1fr);padding:12px 14px 6px}
+  .ctl,.ctl.money,.ctl.md,.ctl.sm{flex:1 1 100%}
+}
+@container (max-width:640px){
+  .content{padding:20px 16px 40px}
+  .r-forms{grid-template-columns:16px 60px minmax(0,1fr) auto}
+  .r-forms .c-due,.r-forms .c-freq{display:none}
+  .r-forms.read{grid-template-columns:60px minmax(0,1fr) auto}
+  .r-due{grid-template-columns:44px minmax(0,1fr) auto}
+  .r-due .code,.r-due .c-in{display:none}
+  .r-tpl{grid-template-columns:60px minmax(0,1fr) auto}
+  .r-tpl .c-count{display:none}
+  .r-filed{grid-template-columns:60px minmax(0,1fr) auto}
+  .r-filed .c-date{display:none}
+  .fields{grid-template-columns:minmax(0,1fr)}
+  .disc-body{padding:4px 16px 16px 16px}
+}
+@media (max-width:860px){
+  .sidebar{position:absolute;top:40px;bottom:0;left:0;z-index:30;background:var(--bg);box-shadow:var(--pop);border-right:1px solid var(--border)}
+  .window .main,.window.sb-hidden .main{margin:0 8px 8px 8px}
+  .rpanel{position:absolute;top:40px;bottom:0;right:0;width:min(320px,100%);z-index:30;background:var(--bg);box-shadow:var(--pop);border-left:1px solid var(--border)}
+  .window.panel-open .main{margin-right:8px}
+}
+@media (max-width:600px){
+  .pill .nm,.pill .tin{display:none}
+  .pill .bc{display:inline}
+  .tb-left .hist{display:none}
+  .comp-spec{grid-template-columns:minmax(0,1fr)}
+  .ds-in{padding:24px 16px 48px}
+  .ph-actions{width:100%}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style><style>html,body{margin:0;height:100%}body{display:flex;flex-direction:column}.window{border-radius:0!important;border:0;box-shadow:none;flex:1}</style></head><body><div class="window win" id="win">
+    <header class="titlebar">
+      <div class="tb-left">
+        <span class="lights" aria-hidden="true"><span></span><span></span><span></span></span>
+        <button class="ibtn" data-act="toggle-sidebar" aria-label="Toggle sidebar (Ctrl+B)" title="Toggle sidebar (Ctrl+B)"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button>
+        <button class="ibtn hist" id="b-back" data-act="back" aria-label="Back" title="Back"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></button>
+        <button class="ibtn hist" id="b-fwd" data-act="fwd" aria-label="Forward" title="Forward" disabled=""><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button>
+        <button class="ibtn collapsed-only" data-act="search" aria-label="Search (Ctrl+K)" title="Search (Ctrl+K)"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+        <button class="ibtn collapsed-only" data-act="new" aria-label="New return" title="New return"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+      </div>
+      <button class="pill" id="pill" data-act="pill" aria-expanded="false" aria-label="Tax profile"><span class="av s20" style="--h:222" aria-hidden="true">GC</span><span class="nm">Goldcoders Corp</span><span class="tin mono">009-123-456-00000</span><span class="bc mono">00000</span><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+      <div class="tb-right">
+        <button class="ibtn" id="b-bell" data-act="bell" aria-pressed="false" aria-label="Notifications" title="Notifications"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"></path><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path></svg><span class="dot" id="bell-dot"></span></button>
+        <button class="ibtn" id="b-theme" data-act="cycle-theme" aria-label="Theme: system (click to change)" title="Theme: system (click to change)"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"></rect><path d="M8 21h8"></path><path d="M12 17v4"></path></svg></button>
+        <div class="wc" aria-hidden="true">
+          <button tabindex="-1"><svg viewBox="0 0 10 10"><path d="M0 5.5h10"></path></svg></button>
+          <button tabindex="-1"><svg viewBox="0 0 10 10"><rect x=".5" y=".5" width="9" height="9" rx="1"></rect></svg></button>
+          <button tabindex="-1" class="close"><svg viewBox="0 0 10 10"><path d="M0 0l10 10M10 0L0 10"></path></svg></button>
+        </div>
+      </div>
+    </header>
+    <div class="body">
+      <aside class="sidebar" aria-label="Sidebar">
+        <div class="sb-top">
+          <button class="searchbtn" data-act="search"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span class="lbl">Search</span><kbd id="kbd">Ctrl K</kbd></button>
+          <button class="ibtn" data-act="new" aria-label="New return" title="New return"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+        </div>
+        <nav class="sb-scroll" id="sb-nav"><button class="nav" data-act="go:home"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg><span class="lbl">Home</span></button><button class="nav" data-act="go:library"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg><span class="lbl">Form library</span></button><button class="nav" data-act="go:calendar"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path></svg><span class="lbl">Calendar</span></button><button class="nav" data-act="go:filings"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg><span class="lbl">Filings</span></button><div class="glabel">Recent</div><button class="nav" data-act="recent:2550Q:gc" title="2550Q Q3 2026 · Goldcoders Corp"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg><span class="lbl">2550Q Q3 2026 · Goldcoders Corp</span></button><button class="nav" data-act="recent:1701Q:maria" title="1701Q Q3 2026 · Maria Santos Dela Cruz"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg><span class="lbl">1701Q Q3 2026 · Maria Santos Dela Cruz</span></button><button class="nav" data-act="recent:1601-C:gc" title="1601-C Sep 2026 · Goldcoders Corp"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg><span class="lbl">1601-C Sep 2026 · Goldcoders Corp</span></button><button class="nav" data-act="recent:2551Q:nena" title="2551Q Q2 2026 · Sari-Sari ni Aling Nena"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg><span class="lbl">2551Q Q2 2026 · Sari-Sari ni Aling Nena</span></button></nav>
+        <div class="sb-foot" id="sb-foot">
+    
+    <button class="nav" data-act="go:settings"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg><span class="lbl">Settings</span></button>
+    <button class="account" data-act="menu" aria-expanded="false" aria-haspopup="menu"><span class="av s28" style="--h:30" aria-hidden="true">JC</span><span class="who"><b>Juan Dela Cruz</b><span>juan@goldcoders.ph</span></span><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button></div>
+      </aside>
+      <main class="main"><div class="main-scroll" id="main-scroll"><div class="content wide" id="content"><div class="ph"><div class="ph-text">
+      <div class="meta" style="margin:0 0 4px"><span class="code">BIR Form 0619E</span><span class="sep-dot"></span><span>Revision 2018</span></div>
+      <h1>Monthly Remittance Form for Creditable Income Taxes Withheld (Expanded)</h1>
+      <div class="fp-ctx"><span class="chip">Monthly</span><span class="chip">1 page</span><span class="chip">58 fields</span></div>
+    </div><div class="ph-actions"><button class="btn secondary sm" data-act="sheet:0619E" aria-pressed="false"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>Print preview</button><button class="btn secondary sm" data-act="check:0619E"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>Check</button><button class="btn primary sm" data-act="save-draft:0619E">Save draft</button></div></div>
+    <div class="fp-bar"><span class="av s20" style="--h:222" aria-hidden="true">GC</span><b style="font-weight:600">Goldcoders Corp</b><span class="mono num">009-123-456-00000</span><span class="num">Head office</span><span class="sep-dot"></span><span class="num">For October 2026</span><span class="chip accent fp-checking" role="status" hidden="">Checking…</span><span class="grow"></span><label class="inl">Guided mode<button class="switch" role="switch" aria-checked="false" data-act="toggle-sw" aria-label="Guided mode"></button></label></div>
+    
+    <div class="fp">
+      <nav class="fp-nav" aria-label="Parts of this form"><div class="navhead">On this form</div><button class="nav" data-act="jump:fp-app-0619E-p0"><span class="lbl">Return details</span><span class="count">6</span></button><button class="nav" data-act="jump:fp-app-0619E-p1"><span class="lbl">Part I · Background Information</span><span class="count">8</span></button><button class="nav" data-act="jump:fp-app-0619E-p2"><span class="lbl">Part III · Details of Payment</span><span class="count">5</span></button><button class="nav" data-act="jump:fp-app-0619E-p3"><span class="lbl">Part II · Tax Remittance</span><span class="count">6</span></button></nav>
+      <div style="min-width:0"><details class="part" id="fp-app-0619E-p0" open=""><summary><svg fill="none" stroke="currentColor" class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg><span class="t">Return details</span><span class="disc-meta">6 items</span></summary><div class="part-body"><div class="item "><span class="ino ">1</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">For the Month of (MM/YYYY)<span class="req" title="Required">*</span></span></div>
+    <div class="ctrls"><label class="ctl md"><span class="sub">Month</span><select class="select" style="width:100%" data-fid="fv:0619E:0:0:0" aria-label="Month"><option value="">Choose…</option><option>01 - January</option><option>02 - February</option><option>03 - March</option><option>04 - April</option><option>05 - May</option><option>06 - June</option><option>07 - July</option><option>08 - August</option><option>09 - September</option><option>10 - October</option><option>11 - November</option><option>12 - December</option></select></label><label class="ctl xs"><span class="sub">Year</span><input class="input" data-fid="fv:0619E:0:0:1" maxlength="4" value="" aria-label="Year"></label></div><div class="vmsg" data-vk="fv:0619E:0:0" title=""></div></div></div><div class="item "><span class="ino ">2</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Due Date (MM/DD/YYYY)<span class="req" title="Required">*</span></span></div>
+    <div class="ctrls"><label class="ctl xs"><span class="sub">Due Month</span><input class="input auto" data-fid="fv:0619E:0:1:0" maxlength="2" value="" readonly="" aria-label="Due Month"></label><label class="ctl xs"><span class="sub">Due Day</span><input class="input" data-fid="fv:0619E:0:1:1" maxlength="2" value="" aria-label="Due Day"></label><label class="ctl xs"><span class="sub">Due Year</span><input class="input auto" data-fid="fv:0619E:0:1:2" maxlength="4" value="" readonly="" aria-label="Due Year"></label></div><div class="vmsg" data-vk="fv:0619E:0:1" title=""></div></div></div><div class="item "><span class="ino ">3</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Amended Form?</span></div>
+    <div class="ctrls"><div class="radios" role="radiogroup" aria-label="Amended Form?"><label class="radio"><input type="radio" name="fv:0619E:0:2" data-fid="fv:0619E:0:2:r" value="0"><span>Yes</span></label><label class="radio"><input type="radio" name="fv:0619E:0:2" data-fid="fv:0619E:0:2:r" value="1"><span>No</span></label></div></div><div class="vmsg" data-vk="fv:0619E:0:2" title=""></div></div></div><div class="item "><span class="ino ">4</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Any Taxes Withheld?<span class="req" title="Required">*</span></span></div>
+    <div class="ctrls"><div class="radios" role="radiogroup" aria-label="Any Taxes Withheld?"><label class="radio"><input type="radio" name="fv:0619E:0:3" data-fid="fv:0619E:0:3:r" value="0"><span>Yes</span></label><label class="radio"><input type="radio" name="fv:0619E:0:3" data-fid="fv:0619E:0:3:r" value="1"><span>No</span></label></div></div><div class="vmsg" data-vk="fv:0619E:0:3" title=""></div></div></div><div class="item "><span class="ino ">5</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">ATC</span></div>
+    <div class="ctrls"><label class="ctl "><input class="input" data-fid="fv:0619E:0:4:0" value="" aria-label="ATC"></label></div><div class="vmsg" data-vk="fv:0619E:0:4" title=""></div></div></div><div class="item "><span class="ino ">6</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Tax Type Code</span></div>
+    <div class="ctrls"><label class="ctl "><input class="input" data-fid="fv:0619E:0:5:0" value="" aria-label="Tax Type Code"></label></div><div class="vmsg" data-vk="fv:0619E:0:5" title=""></div></div></div></div></details><details class="part" id="fp-app-0619E-p1" open=""><summary><svg fill="none" stroke="currentColor" class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg><span class="t">Part I · Background Information</span><span class="disc-meta">8 items</span></summary><div class="part-body"><div class="item "><span class="ino ">7</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Taxpayer Identification Number (TIN)<span class="req" title="Required">*</span></span><span class="chip"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>From tax profile</span></div>
+    <div class="ctrls"><div class="tin" role="group" aria-label="Taxpayer Identification Number (TIN)"><input class="input auto" style="width:58px" value="009" readonly="" aria-label="TIN part 1"><span class="d">-</span><input class="input auto" style="width:58px" value="123" readonly="" aria-label="TIN part 2"><span class="d">-</span><input class="input auto" style="width:58px" value="456" readonly="" aria-label="TIN part 3"><span class="d">-</span><input class="input auto" style="width:76px" value="00000" readonly="" aria-label="TIN part 4"></div></div><div class="vmsg" data-vk="fv:0619E:1:0" title=""></div></div></div><div class="item "><span class="ino ">8</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">RDO Code<span class="req" title="Required">*</span></span><span class="chip"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>From tax profile</span></div>
+    <div class="ctrls"><label class="ctl md"><select class="select" style="width:100%" data-fid="fv:0619E:1:1:0" aria-label="RDO Code"><option value="">050</option></select></label></div><div class="vmsg" data-vk="fv:0619E:1:1" title=""></div></div></div><div class="item "><span class="ino ">9</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Withholding Agent’s Name (Last Name, First Name, Middle Name for Individual OR Registered Name for Non-Individual)<span class="req" title="Required">*</span></span><span class="chip"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>From tax profile</span></div>
+    <div class="ctrls"><label class="ctl "><input class="input auto" data-fid="fv:0619E:1:2:0" maxlength="50" value="Goldcoders Corp" readonly="" aria-label="Withholding Agent’s Name (Last Name, First Name, Middle Name for Individual OR Registered Name for Non-Individual)"></label></div><div class="vmsg" data-vk="fv:0619E:1:2" title=""></div></div></div><div class="item "><span class="ino ">10</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Registered Address<span class="req" title="Required">*</span></span><span class="chip"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>From tax profile</span></div>
+    <div class="ctrls"><label class="ctl "><span class="sub">Address</span><input class="input auto" data-fid="fv:0619E:1:3:0" maxlength="150" value="12F Ayala Tower One, Ayala Avenue, Makati City" readonly="" aria-label="Address"></label><label class="ctl "><span class="sub">Address2</span><input class="input auto" data-fid="fv:0619E:1:3:1" maxlength="150" value="12F Ayala Tower One, Ayala Avenue, Makati City" readonly="" aria-label="Address2"></label></div><div class="vmsg" data-vk="fv:0619E:1:3" title=""></div></div></div><div class="item "><span class="ino ">10A</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">ZIP Code<span class="req" title="Required">*</span></span><span class="chip"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>From tax profile</span></div>
+    <div class="ctrls"><label class="ctl "><input class="input auto" data-fid="fv:0619E:1:4:0" maxlength="12" value="1226" readonly="" aria-label="ZIP Code"></label></div><div class="vmsg" data-vk="fv:0619E:1:4" title=""></div></div></div><div class="item "><span class="ino ">11</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Contact Number<span class="req" title="Required">*</span></span><span class="chip"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>From tax profile</span></div>
+    <div class="ctrls"><label class="ctl "><input class="input auto" data-fid="fv:0619E:1:5:0" maxlength="20" value="(02) 8812 4400" readonly="" aria-label="Contact Number"></label></div><div class="vmsg" data-vk="fv:0619E:1:5" title=""></div></div></div><div class="item "><span class="ino ">12</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Category of Withholding Agent<span class="req" title="Required">*</span></span></div>
+    <div class="ctrls"><div class="radios" role="radiogroup" aria-label="Category of Withholding Agent"><label class="radio"><input type="radio" name="fv:0619E:1:6" data-fid="fv:0619E:1:6:r" value="0"><span>Private</span></label><label class="radio"><input type="radio" name="fv:0619E:1:6" data-fid="fv:0619E:1:6:r" value="1"><span>Government</span></label></div></div><div class="vmsg" data-vk="fv:0619E:1:6" title=""></div></div></div><div class="item "><span class="ino ">13</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Email Address<span class="req" title="Required">*</span></span><span class="chip"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>From tax profile</span></div>
+    <div class="ctrls"><label class="ctl "><input class="input auto" data-fid="fv:0619E:1:7:0" maxlength="20" value="tax@goldcoders.ph" readonly="" aria-label="Email Address"></label></div><div class="vmsg" data-vk="fv:0619E:1:7" title=""></div></div></div></div></details><details class="part" id="fp-app-0619E-p2" open=""><summary><svg fill="none" stroke="currentColor" class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg><span class="t">Part III · Details of Payment</span><span class="disc-meta">5 items</span></summary><div class="part-body"><div class="item "><span class="ino ">19</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Item 19</span></div>
+    <div class="ctrls"><label class="ctl "><span class="sub">Line Bus</span><input class="input" data-fid="fv:0619E:2:0:0" maxlength="150" value="" aria-label="Line Bus"></label><label class="ctl "><span class="sub">Agency19</span><input class="input" data-fid="fv:0619E:2:0:1" maxlength="50" value="" aria-label="Agency19"></label><label class="ctl "><span class="sub">Number19</span><input class="input" data-fid="fv:0619E:2:0:2" maxlength="50" value="" aria-label="Number19"></label><label class="ctl sm"><span class="sub">Date19</span><input class="input" type="date" data-fid="fv:0619E:2:0:3" value="" aria-label="Date19"></label><label class="ctl money"><span class="sub">Amount19</span><span class="affix peso"><i>₱</i><input class="input" data-fid="fv:0619E:2:0:4" data-money="1" inputmode="decimal" placeholder="0.00" value="" aria-label="Amount19"></span></label></div><div class="vmsg" data-vk="fv:0619E:2:0" title=""></div></div></div><div class="item "><span class="ino ">20</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Check</span></div>
+    <div class="ctrls"><label class="ctl "><span class="sub">Agency20</span><input class="input" data-fid="fv:0619E:2:1:0" maxlength="50" value="" aria-label="Agency20"></label><label class="ctl "><span class="sub">Number20</span><input class="input" data-fid="fv:0619E:2:1:1" maxlength="50" value="" aria-label="Number20"></label><label class="ctl sm"><span class="sub">Date20</span><input class="input" type="date" data-fid="fv:0619E:2:1:2" value="" aria-label="Date20"></label><label class="ctl money"><span class="sub">Amount20</span><span class="affix peso"><i>₱</i><input class="input" data-fid="fv:0619E:2:1:3" data-money="1" inputmode="decimal" placeholder="0.00" value="" aria-label="Amount20"></span></label></div><div class="vmsg" data-vk="fv:0619E:2:1" title=""></div></div></div><div class="item "><span class="ino ">21</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Tax Debit Memo</span></div>
+    <div class="ctrls"><label class="ctl "><span class="sub">Agency21</span><input class="input" data-fid="fv:0619E:2:2:0" maxlength="50" value="" aria-label="Agency21"></label><label class="ctl "><span class="sub">Number21</span><input class="input" data-fid="fv:0619E:2:2:1" maxlength="50" value="" aria-label="Number21"></label><label class="ctl sm"><span class="sub">Date21</span><input class="input" type="date" data-fid="fv:0619E:2:2:2" value="" aria-label="Date21"></label><label class="ctl money"><span class="sub">Amount21</span><span class="affix peso"><i>₱</i><input class="input" data-fid="fv:0619E:2:2:3" data-money="1" inputmode="decimal" placeholder="0.00" value="" aria-label="Amount21"></span></label></div><div class="vmsg" data-vk="fv:0619E:2:2" title=""></div></div></div><div class="item "><span class="ino ">22</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Others (specify below)</span></div>
+    <div class="ctrls"><label class="ctl "><span class="sub">Particular22</span><input class="input" data-fid="fv:0619E:2:3:0" maxlength="50" value="" aria-label="Particular22"></label><label class="ctl "><span class="sub">Agency22</span><input class="input" data-fid="fv:0619E:2:3:1" maxlength="50" value="" aria-label="Agency22"></label><label class="ctl "><span class="sub">Number22</span><input class="input" data-fid="fv:0619E:2:3:2" maxlength="50" value="" aria-label="Number22"></label><label class="ctl sm"><span class="sub">Date22</span><input class="input" type="date" data-fid="fv:0619E:2:3:3" value="" aria-label="Date22"></label><label class="ctl money"><span class="sub">Amount22</span><span class="affix peso"><i>₱</i><input class="input" data-fid="fv:0619E:2:3:4" data-money="1" inputmode="decimal" placeholder="0.00" value="" aria-label="Amount22"></span></label></div><div class="vmsg" data-vk="fv:0619E:2:3" title=""></div></div></div><div class="item"><span class="ino blank"></span><div style="min-width:0"><details class="more"><summary><svg fill="none" stroke="currentColor" class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>5 more fields not yet placed on the paper layout</summary><div class="ctrls"><label class="ctl "><input class="input" data-fid="fv:0619E:2:4:0" maxlength="60" value="" aria-label="Final Flag"></label><label class="ctl "><input class="input" data-fid="fv:0619E:2:4:1" maxlength="60" value="" aria-label="Enroll"></label><label class="ctl "><input class="input" data-fid="fv:0619E:2:4:2" maxlength="50" value="" aria-label="Ebir Online Confirm Username"></label><label class="ctl "><input class="input" data-fid="fv:0619E:2:4:3" maxlength="50" value="" aria-label="Ebir Online Username"></label><label class="ctl "><input class="input" data-fid="fv:0619E:2:4:4" maxlength="50" value="" aria-label="Ebir Online Secret"></label></div></details><div class="vmsg" data-vk="fv:0619E:2:4" title=""></div></div></div></div></details><details class="part" id="fp-app-0619E-p3" open=""><summary><svg fill="none" stroke="currentColor" class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg><span class="t">Part II · Tax Remittance</span><span class="disc-meta">6 items</span></summary><div class="part-body"><div class="item "><span class="ino ">14</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Amount of Remittance</span></div>
+    <div class="ctrls"><label class="ctl money"><span class="affix peso"><i>₱</i><input class="input" data-fid="fv:0619E:3:0:0" data-money="1" inputmode="decimal" placeholder="0.00" value="" aria-label="Amount of Remittance"></span></label></div><div class="vmsg" data-vk="fv:0619E:3:0" title=""></div></div></div><div class="item "><span class="ino ">15</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Less: Amount Remitted from Previously Filed Form, if this is an amended form</span></div>
+    <div class="ctrls"><label class="ctl money"><span class="affix peso"><i>₱</i><input class="input" data-fid="fv:0619E:3:1:0" data-money="1" inputmode="decimal" placeholder="0.00" value="" aria-label="Less: Amount Remitted from Previously Filed Form, if this is an amended form"></span></label></div><div class="vmsg" data-vk="fv:0619E:3:1" title=""></div></div></div><div class="item calc"><span class="ino ">16</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Net Amount of Remittance (Item 14 Less Item 15)</span><span class="chip"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>Computed</span></div>
+    <div class="ctrls"><label class="ctl money"><span class="affix peso"><i>₱</i><input class="input auto" data-fid="fv:0619E:3:2:0" data-money="1" inputmode="decimal" placeholder="0.00" value="0.00" readonly="" aria-label="Net Amount of Remittance (Item 14 Less Item 15)"></span></label></div><div class="vmsg" data-vk="fv:0619E:3:2" title=""></div></div></div><div class="item "><span class="ino ">17</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Add: Penalties</span></div>
+    <div class="ctrls"><label class="ctl money"><span class="sub">Tax17A</span><span class="affix peso"><i>₱</i><input class="input" data-fid="fv:0619E:3:3:0" data-money="1" inputmode="decimal" placeholder="0.00" value="" aria-label="Tax17A"></span></label><label class="ctl money"><span class="sub">Tax17B</span><span class="affix peso"><i>₱</i><input class="input" data-fid="fv:0619E:3:3:1" data-money="1" inputmode="decimal" placeholder="0.00" value="" aria-label="Tax17B"></span></label><label class="ctl money"><span class="sub">Tax17C</span><span class="affix peso"><i>₱</i><input class="input" data-fid="fv:0619E:3:3:2" data-money="1" inputmode="decimal" placeholder="0.00" value="" aria-label="Tax17C"></span></label><label class="ctl money"><span class="sub">Tax17D</span><span class="affix peso"><i>₱</i><input class="input auto" data-fid="fv:0619E:3:3:3" data-money="1" inputmode="decimal" placeholder="0.00" value="0.00" readonly="" aria-label="Tax17D"></span></label></div><div class="vmsg" data-vk="fv:0619E:3:3" title=""></div></div></div><div class="item calc"><span class="ino ">18</span><div style="min-width:0">
+    <div class="ilabel"><span class="tx">Total Amount of Remittance (Sum of Items 16 and 17D)</span><span class="chip"><svg fill="none" stroke="currentColor" class="i " viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>Computed</span></div>
+    <div class="ctrls"><label class="ctl money"><span class="affix peso"><i>₱</i><input class="input auto" data-fid="fv:0619E:3:4:0" data-money="1" inputmode="decimal" placeholder="0.00" value="0.00" readonly="" aria-label="Total Amount of Remittance (Sum of Items 16 and 17D)"></span></label></div><div class="vmsg" data-vk="fv:0619E:3:4" title=""></div></div></div><div class="item"><span class="ino blank"></span><div style="min-width:0"><details class="more"><summary><svg fill="none" stroke="currentColor" class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>3 more fields not yet placed on the paper layout</summary><div class="ctrls"><label class="ctl "><input class="input" data-fid="fv:0619E:3:5:0" maxlength="20" value="" aria-label="Tax Agent No"></label><label class="ctl sm"><input class="input" type="date" data-fid="fv:0619E:3:5:1" value="" aria-label="Date Issue"></label><label class="ctl sm"><input class="input" type="date" data-fid="fv:0619E:3:5:2" value="" aria-label="Date Expiry"></label></div></details><div class="vmsg" data-vk="fv:0619E:3:5" title=""></div></div></div></div></details></div>
+    </div></div></div></main>
+      <aside class="rpanel" id="rpanel" aria-label="Side panel"></aside>
+    </div>
+    <div id="overlay-root"></div>
+  </div></body></html>

@@ -1,0 +1,89 @@
+[package]
+name = "blitz-gpui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# With gpui-kit's `gpui-fast` feature, the `gpui` namespace IS gpui-fast:
+# Render/Context/Window all come from that crate, so we depend on it
+# directly (aliased) rather than gpui-pre.
+gpui = { package = "gpui-fast", version = "=0.1.7" }
+gpui-kit = { version = "=0.7.3", default-features = false, features = ["gpui-fast"] }
+subsecond = "=0.7.10"
+dioxus-devtools = "=0.7.10"
+
+blitz-dom = "=0.3.0-beta.3"
+blitz-html = "=0.3.0-beta.3"
+blitz-paint = "=0.3.0-beta.3"
+blitz-traits = "=0.3.0-beta.3"
+anyrender = "0.14"
+anyrender_vello_cpu = { version = "0.18", features = ["multithreading"] }
+
+atomic_refcell = "0.1.13"
+keyboard-types = "0.7"
+image = { version = "0.25.6", default-features = false }
+smallvec = "1"
+
+# core-video 0.5.2 deps io-surface without its `link` feature, so no
+# `-framework IOSurface` reaches the link line. dx's -force_load fat link
+# pulls io_surface objects unconditionally and needs the real framework.
+[target.'cfg(target_os = "macos")'.dependencies.io-surface]
+version = "0.16"
+features = ["link"]
+
+# Dev-runtime performance (gpui-kit docs): optimize the framework crates that
+# dominate every frame — rasterization (vello_cpu), style+layout (stylo,
+# taffy), text shaping (parley, fontique, rustybuzz) — while the tip crate
+# stays unoptimized for fast subsecond patches. `desktop-dev` is the profile
+# `dx serve` uses; it inherits dev's package overrides.
+[profile.dev.package]
+gpui-fast = { opt-level = 3 }
+gpui-fast-platform = { opt-level = 3 }
+gpui-fast-macos = { opt-level = 3 }
+gpui-fast-apple = { opt-level = 3 }
+gpui-pre = { opt-level = 3 }
+gpui-pre-macros = { opt-level = 3 }
+gpui-pre-platform = { opt-level = 3 }
+gpui-pre-macos = { opt-level = 3 }
+gpui-base = { opt-level = 3 }
+gpui-kit = { opt-level = 3 }
+gpui-kit-assets = { opt-level = 3 }
+gpui-component = { opt-level = 3 }
+blitz-dom = { opt-level = 3 }
+blitz-html = { opt-level = 3 }
+blitz-paint = { opt-level = 3 }
+blitz-traits = { opt-level = 3 }
+anyrender = { opt-level = 3 }
+anyrender_vello_cpu = { opt-level = 3 }
+vello_cpu = { opt-level = 3 }
+vello_common = { opt-level = 3 }
+stylo = { opt-level = 3 }
+stylo_dom = { opt-level = 3 }
+stylo_taffy = { opt-level = 3 }
+selectors = { opt-level = 3 }
+taffy = { opt-level = 3 }
+parley = { opt-level = 3 }
+parley_engine = { opt-level = 3 }
+fontique = { opt-level = 3 }
+rustybuzz = { opt-level = 3 }
+ttf-parser = { opt-level = 3 }
+fontdb = { opt-level = 3 }
+html5ever = { opt-level = 3 }
+image = { opt-level = 3 }
+usvg = { opt-level = 3 }
+resvg = { opt-level = 3 }
+tiny-skia = { opt-level = 3 }
+
+[profile.desktop-dev]
+inherits = "dev"
+
+[profile.desktop-dev.package]
+"*" = { opt-level = 3 }
+
+# NOTE: the vendored serde_fmt patch was needed only because gpui-pre <=0.3.4
+# forced `log/kv_unstable_serde` (dragging serde_fmt's `From<Error> for
+# fmt::Error` impl into stylo's dep closure and breaking its ToCss derives).
+# gpui-fast / gpui-pre 0.3.9 use plain `log` — patch retained on disk but
+# disabled; re-add if stylo E0282 errors return.
+# [patch.crates-io]
+# serde_fmt = { path = "vendor/serde_fmt" }
